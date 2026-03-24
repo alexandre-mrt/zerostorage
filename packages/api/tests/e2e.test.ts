@@ -4,6 +4,7 @@ import { Hono } from "hono";
 process.env.DATABASE_URL = ":memory:";
 
 const { authMiddleware } = await import("../src/middleware/auth");
+const { rateLimitMiddleware } = await import("../src/middleware/rateLimit");
 const { adminRouter } = await import("../src/routes/admin");
 const { filesRouter } = await import("../src/routes/files");
 const { keysRouter } = await import("../src/routes/keys");
@@ -13,6 +14,7 @@ const app = new Hono();
 app.route("/admin", adminRouter);
 const api = new Hono();
 api.use("*", authMiddleware);
+api.use("*", rateLimitMiddleware);
 api.route("/files", filesRouter);
 api.route("/keys", keysRouter);
 api.route("/usage", usageRouter);
@@ -67,5 +69,46 @@ describe("End-to-end: bootstrap -> keys -> usage", () => {
 		});
 		const keys = (await keysRes.json()).data.keys;
 		expect(keys.length).toBeGreaterThanOrEqual(2);
+	});
+
+	test("concurrent bootstraps with same email fail gracefully", async () => {
+		const email = `concurrent-${Date.now()}@test.com`;
+		const headers = {
+			"Content-Type": "application/json",
+			"X-Admin-Secret": "zerostorage-admin-dev",
+		};
+
+		const results = await Promise.all([
+			app.request("/admin/bootstrap", { method: "POST", headers, body: JSON.stringify({ email }) }),
+			app.request("/admin/bootstrap", { method: "POST", headers, body: JSON.stringify({ email }) }),
+		]);
+
+		const statuses = results.map((r) => r.status);
+		// One should succeed (201), one should fail (409)
+		expect(statuses).toContain(201);
+		expect(statuses).toContain(409);
+	});
+
+	test("different tiers get different rate limits", async () => {
+		// Create free and pro users
+		const freeRes = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-Admin-Secret": "zerostorage-admin-dev" },
+			body: JSON.stringify({ email: `free-rl-${Date.now()}@test.com`, tier: "free" }),
+		});
+		const proRes = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-Admin-Secret": "zerostorage-admin-dev" },
+			body: JSON.stringify({ email: `pro-rl-${Date.now()}@test.com`, tier: "pro" }),
+		});
+
+		const freeKey = (await freeRes.json()).data.apiKey;
+		const proKey = (await proRes.json()).data.apiKey;
+
+		const freeFiles = await app.request("/api/v1/files", { headers: { Authorization: `Bearer ${freeKey}` } });
+		const proFiles = await app.request("/api/v1/files", { headers: { Authorization: `Bearer ${proKey}` } });
+
+		expect(freeFiles.headers.get("X-RateLimit-Limit")).toBe("100");
+		expect(proFiles.headers.get("X-RateLimit-Limit")).toBe("10000");
 	});
 });
