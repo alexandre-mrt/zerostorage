@@ -6,7 +6,7 @@ export const db = new Database(DATABASE_URL, { create: true });
 db.exec("PRAGMA journal_mode = WAL");
 db.exec("PRAGMA foreign_keys = ON");
 
-export function initializeDatabase() {
+function createTables() {
 	db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -52,6 +52,14 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_usage_logs_api_key_id ON usage_logs(api_key_id);
     CREATE INDEX IF NOT EXISTS idx_usage_logs_timestamp ON usage_logs(timestamp);
   `);
+}
+
+// Auto-initialize tables before preparing statements
+createTables();
+
+export function initializeDatabase() {
+	// Tables are already created above; this is kept for backwards compatibility
+	createTables();
 }
 
 // Type-safe query helpers

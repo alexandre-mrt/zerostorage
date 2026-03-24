@@ -9,12 +9,22 @@ const INDEXER_RPC =
 	process.env.ZG_INDEXER_RPC || "https://indexer-storage-testnet-turbo.0g.ai";
 const PRIVATE_KEY = process.env.ZG_PRIVATE_KEY;
 
-if (!PRIVATE_KEY) {
-	throw new Error("ZG_PRIVATE_KEY environment variable is required");
-}
+// Lazy-init provider and signer to avoid crashing at import time in tests
+let _provider: ethers.JsonRpcProvider | null = null;
+let _signer: ethers.Wallet | null = null;
 
-const provider = new ethers.JsonRpcProvider(EVM_RPC);
-const signer = new ethers.Wallet(PRIVATE_KEY, provider);
+function getSigner(): ethers.Wallet {
+	if (!PRIVATE_KEY) {
+		throw new Error("ZG_PRIVATE_KEY environment variable is required");
+	}
+	if (!_provider) {
+		_provider = new ethers.JsonRpcProvider(EVM_RPC);
+	}
+	if (!_signer) {
+		_signer = new ethers.Wallet(PRIVATE_KEY, _provider);
+	}
+	return _signer;
+}
 
 function createIndexer(): Indexer {
 	return new Indexer(INDEXER_RPC);
@@ -44,7 +54,7 @@ export async function uploadFile(
 
 		const rootHash = tree.rootHash();
 		const indexer = createIndexer();
-		const [tx, uploadErr] = await indexer.upload(file, EVM_RPC, signer);
+		const [tx, uploadErr] = await indexer.upload(file, EVM_RPC, getSigner());
 
 		if (uploadErr || !tx) {
 			throw new Error(`Upload failed: ${uploadErr}`);
