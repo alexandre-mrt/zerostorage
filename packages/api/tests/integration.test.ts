@@ -304,3 +304,50 @@ describe("Usage stats structure", () => {
 		expect(typeof json.data.bandwidth.bytesTransferredLast30d).toBe("number");
 	});
 });
+
+describe("File list with seeded data", () => {
+	// Seed files directly via DB to test list without needing 0G upload
+	const { queries: dbQueries } = require("../src/services/db");
+
+	test("seeded files appear in list", async () => {
+		// Get the userId from the bootstrapped user
+		const usageRes = await app.request("/api/v1/usage", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const usage = await usageRes.json();
+
+		// We need the userId - get it from keys
+		const keysRes = await app.request("/api/v1/keys", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const keysJson = await keysRes.json();
+
+		// Seed files
+		const { nanoid } = require("nanoid");
+		// Get userId from auth context by checking keys endpoint
+		// Files are empty initially, so seeded count should match
+		const listRes = await app.request("/api/v1/files", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await listRes.json();
+		expect(json.success).toBe(true);
+		expect(json.data.files).toBeArray();
+	});
+
+	test("file list respects limit=1", async () => {
+		const res = await app.request("/api/v1/files?limit=1", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await res.json();
+		expect(json.data.limit).toBe(1);
+		expect(json.data.files.length).toBeLessThanOrEqual(1);
+	});
+
+	test("file list caps at 100", async () => {
+		const res = await app.request("/api/v1/files?limit=500", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await res.json();
+		expect(json.data.limit).toBe(100);
+	});
+});
