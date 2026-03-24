@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { authMiddleware } from "./middleware/auth";
 import { rateLimitMiddleware } from "./middleware/rateLimit";
 import { requestIdMiddleware } from "./middleware/requestId";
+import { securityHeaders } from "./middleware/security";
 import { adminRouter } from "./routes/admin";
 import { filesRouter } from "./routes/files";
 import { keysRouter } from "./routes/keys";
@@ -17,6 +18,7 @@ const app = new Hono();
 app.use("*", cors());
 app.use("*", logger());
 app.use("*", requestIdMiddleware);
+app.use("*", securityHeaders);
 
 // Global error handler - catch unhandled errors and return 500
 app.onError((err, c) => {
