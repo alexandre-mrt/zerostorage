@@ -249,6 +249,33 @@ describe("Keys API", () => {
 		});
 		expect(failRes.status).toBe(401);
 	});
+
+	test("revoked key shows in key list with revokedAt", async () => {
+		const keysRes = await app.request("/api/v1/keys", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await keysRes.json();
+		const revoked = json.data.keys.filter((k: { revokedAt: unknown }) => k.revokedAt !== null);
+		expect(revoked.length).toBeGreaterThan(0);
+	});
+
+	test("multiple keys can be created", async () => {
+		const results = await Promise.all(
+			["Key-A", "Key-B", "Key-C"].map((name) =>
+				app.request("/api/v1/keys", {
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${apiKey}`,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ name }),
+				}),
+			),
+		);
+		for (const res of results) {
+			expect(res.status).toBe(201);
+		}
+	});
 });
 
 describe("Usage API", () => {
