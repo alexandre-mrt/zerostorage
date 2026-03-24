@@ -156,6 +156,16 @@ describe("Keys API", () => {
 		expect(json.data.keys.length).toBeGreaterThan(0);
 	});
 
+	test("key list entries have keyPrefix starting with zs_", async () => {
+		const res = await app.request("/api/v1/keys", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const keys = (await res.json()).data.keys;
+		for (const k of keys) {
+			expect(k.keyPrefix).toMatch(/^zs_/);
+		}
+	});
+
 	test("POST /keys creates a new key", async () => {
 		const res = await app.request("/api/v1/keys", {
 			method: "POST",
