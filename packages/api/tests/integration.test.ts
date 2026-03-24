@@ -241,4 +241,33 @@ describe("Rate limiting headers", () => {
 		expect(res.headers.get("X-RateLimit-Limit")).toBeTruthy();
 		expect(res.headers.get("X-RateLimit-Remaining")).toBeTruthy();
 	});
+
+	test("pro tier has 10000 limit", async () => {
+		const res = await app.request("/api/v1/files", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		expect(res.headers.get("X-RateLimit-Limit")).toBe("10000");
+	});
+});
+
+describe("Usage stats structure", () => {
+	test("storage stats have correct shape", async () => {
+		const res = await app.request("/api/v1/usage", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await res.json();
+		expect(typeof json.data.storage.filesCount).toBe("number");
+		expect(typeof json.data.storage.bytesUsed).toBe("number");
+		expect(json.data.storage.filesCount).toBeGreaterThanOrEqual(0);
+		expect(json.data.storage.bytesUsed).toBeGreaterThanOrEqual(0);
+	});
+
+	test("bandwidth stats have correct shape", async () => {
+		const res = await app.request("/api/v1/usage", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await res.json();
+		expect(typeof json.data.bandwidth.requestsLast30d).toBe("number");
+		expect(typeof json.data.bandwidth.bytesTransferredLast30d).toBe("number");
+	});
 });
