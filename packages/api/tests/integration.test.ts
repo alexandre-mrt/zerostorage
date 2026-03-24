@@ -87,6 +87,27 @@ describe("Files API", () => {
 		expect(res.status).toBe(400);
 	});
 
+	test("GET /files supports pagination edge cases", async () => {
+		// page=0 should clamp to 1, limit=-1 should clamp to 1
+		const res = await app.request("/api/v1/files?page=0&limit=-1", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		expect(res.status).toBe(200);
+		const json = await res.json();
+		expect(json.data.page).toBe(1);
+		expect(json.data.limit).toBe(1);
+	});
+
+	test("GET /files supports NaN pagination", async () => {
+		const res = await app.request("/api/v1/files?page=abc&limit=xyz", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		expect(res.status).toBe(200);
+		const json = await res.json();
+		expect(json.data.page).toBe(1);
+		expect(json.data.limit).toBe(20);
+	});
+
 	test("GET /files/:hash/status returns 404 for unknown hash", async () => {
 		const res = await app.request("/api/v1/files/nonexistent/status", {
 			headers: { Authorization: `Bearer ${apiKey}` },

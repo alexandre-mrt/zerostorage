@@ -26,6 +26,14 @@ filesRouter.post("/upload", async (c) => {
 		return c.json({ success: false, error: "No file provided. Use multipart form with 'file' field." }, 400);
 	}
 
+	if (file.size === 0) {
+		return c.json({ success: false, error: "Cannot upload an empty file" }, 400);
+	}
+
+	if (!file.name || file.name.trim().length === 0) {
+		return c.json({ success: false, error: "File name is required" }, 400);
+	}
+
 	const maxSize = TIER_STORAGE_LIMITS[auth.tier] ?? TIER_STORAGE_LIMITS.free;
 	if (file.size > maxSize) {
 		return c.json({ success: false, error: `File exceeds storage limit for ${auth.tier} tier` }, 413);
@@ -94,8 +102,8 @@ filesRouter.get("/:rootHash", async (c) => {
 
 filesRouter.get("/", async (c) => {
 	const auth = c.get("auth");
-	const page = Number(c.req.query("page") || "1");
-	const limit = Math.min(Number(c.req.query("limit") || "20"), 100);
+	const page = Math.max(1, Number(c.req.query("page") || "1") || 1);
+	const limit = Math.min(Math.max(1, Number(c.req.query("limit") || "20") || 20), 100);
 	const offset = (page - 1) * limit;
 
 	const userFiles = queries.listFiles.all(auth.userId, limit, offset);
