@@ -84,4 +84,20 @@ describe("API response envelope consistency", () => {
 		expect(json.data).toHaveProperty("status");
 		expect(json.data).toHaveProperty("version");
 	});
+
+	test("all JSON responses have correct content-type", async () => {
+		const endpoints = [
+			{ path: "/admin/health", auth: false },
+			{ path: "/api/v1/files", auth: true },
+			{ path: "/api/v1/keys", auth: true },
+			{ path: "/api/v1/usage", auth: true },
+		];
+
+		for (const ep of endpoints) {
+			const headers: Record<string, string> = {};
+			if (ep.auth) headers.Authorization = `Bearer ${apiKey}`;
+			const res = await app.request(ep.path, { headers });
+			expect(res.headers.get("content-type")).toContain("application/json");
+		}
+	});
 });
