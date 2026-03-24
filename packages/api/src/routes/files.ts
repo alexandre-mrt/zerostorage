@@ -159,3 +159,16 @@ filesRouter.get("/:rootHash/status", async (c) => {
 		},
 	});
 });
+
+filesRouter.get("/stats/summary", async (c) => {
+	const auth = c.get("auth");
+	const stats = queries.fileStats.get(auth.userId);
+
+	return c.json({
+		success: true,
+		data: {
+			totalFiles: stats?.total_files ?? 0,
+			totalSize: stats?.total_size ?? 0,
+		},
+	});
+});

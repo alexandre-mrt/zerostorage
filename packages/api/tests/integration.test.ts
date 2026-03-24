@@ -115,6 +115,18 @@ describe("Files API", () => {
 		expect(res.status).toBe(404);
 	});
 
+	test("GET /files/stats/summary returns file count and size", async () => {
+		const res = await app.request("/api/v1/files/stats/summary", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		expect(res.status).toBe(200);
+		const json = await res.json();
+		expect(json.success).toBe(true);
+		expect(typeof json.data.totalFiles).toBe("number");
+		expect(typeof json.data.totalSize).toBe("number");
+		expect(json.data.totalFiles).toBeGreaterThanOrEqual(0);
+	});
+
 	test("DELETE /files/:hash returns 404 for unknown hash", async () => {
 		const res = await app.request("/api/v1/files/nonexistent", {
 			method: "DELETE",
