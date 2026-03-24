@@ -16,6 +16,20 @@ const app = new Hono();
 app.use("*", cors());
 app.use("*", logger());
 
+// Global error handler - catch unhandled errors and return 500
+app.onError((err, c) => {
+	console.error(`Unhandled error: ${err.message}`, err.stack);
+	return c.json(
+		{ success: false, error: "Internal server error" },
+		500,
+	);
+});
+
+// 404 handler
+app.notFound((c) => {
+	return c.json({ success: false, error: "Not found" }, 404);
+});
+
 // Public routes
 app.route("/admin", adminRouter);
 

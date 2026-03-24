@@ -26,13 +26,20 @@ const DEFAULT_BASE_URL = "http://localhost:3000";
 export class ZeroStore {
 	private readonly apiKey: string;
 	private readonly baseUrl: string;
+	private readonly timeout: number;
+	private readonly retries: number;
 
 	constructor(config: ZeroStoreConfig) {
 		if (!config.apiKey) {
 			throw new Error("API key is required");
 		}
+		if (!config.apiKey.startsWith("zs_")) {
+			throw new Error("API key must start with 'zs_'");
+		}
 		this.apiKey = config.apiKey;
 		this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+		this.timeout = config.timeout ?? 30_000;
+		this.retries = config.retries ?? 0;
 	}
 
 	private async request<T>(
@@ -45,14 +52,34 @@ export class ZeroStore {
 			...((options.headers as Record<string, string>) ?? {}),
 		};
 
-		const response = await fetch(url, { ...options, headers });
-		const json = (await response.json()) as ApiResponse<T>;
+		let lastError: Error | null = null;
+		for (let attempt = 0; attempt <= this.retries; attempt++) {
+			try {
+				const response = await fetch(url, {
+					...options,
+					headers,
+					signal: AbortSignal.timeout(this.timeout),
+				});
+				const json = (await response.json()) as ApiResponse<T>;
 
-		if (!json.success) {
-			throw new ZeroStoreError(json.error ?? "Unknown error", response.status);
+				if (!json.success) {
+					throw new ZeroStoreError(json.error ?? "Unknown error", response.status);
+				}
+
+				return json.data as T;
+			} catch (error) {
+				if (error instanceof ZeroStoreError) throw error; // Don't retry API errors
+				lastError = error instanceof Error ? error : new Error(String(error));
+				if (attempt < this.retries) {
+					await new Promise((r) => setTimeout(r, 100 * (attempt + 1)));
+				}
+			}
 		}
 
-		return json.data as T;
+		throw new ZeroStoreError(
+			lastError?.message ?? "Request failed after retries",
+			0,
+		);
 	}
 
 	// --- Files ---

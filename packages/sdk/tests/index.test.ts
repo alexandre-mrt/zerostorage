@@ -6,6 +6,10 @@ describe("ZeroStore", () => {
 		expect(() => new ZeroStore({ apiKey: "" })).toThrow("API key is required");
 	});
 
+	test("constructor rejects invalid apiKey prefix", () => {
+		expect(() => new ZeroStore({ apiKey: "invalid_key" })).toThrow("must start with 'zs_'");
+	});
+
 	test("constructor accepts valid config", () => {
 		const store = new ZeroStore({ apiKey: "zs_test123" });
 		expect(store).toBeInstanceOf(ZeroStore);
@@ -24,8 +28,30 @@ describe("ZeroStore", () => {
 			apiKey: "zs_test123",
 			baseUrl: "https://custom.api.dev/",
 		});
-		// Verify it works (no direct access to private field, but no error)
 		expect(store).toBeInstanceOf(ZeroStore);
+	});
+
+	test("constructor accepts timeout and retries", () => {
+		const store = new ZeroStore({
+			apiKey: "zs_test123",
+			timeout: 5000,
+			retries: 3,
+		});
+		expect(store).toBeInstanceOf(ZeroStore);
+	});
+
+	test("request fails gracefully on unreachable server", async () => {
+		const store = new ZeroStore({
+			apiKey: "zs_test123",
+			baseUrl: "http://localhost:1",
+			timeout: 1000,
+		});
+		try {
+			await store.list();
+			expect(true).toBe(false);
+		} catch (error) {
+			expect(error).toBeInstanceOf(ZeroStoreError);
+		}
 	});
 });
 

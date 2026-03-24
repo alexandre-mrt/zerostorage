@@ -1,6 +1,10 @@
 export interface ZeroStoreConfig {
 	apiKey: string;
 	baseUrl?: string;
+	/** Request timeout in milliseconds (default: 30000) */
+	timeout?: number;
+	/** Number of retries on network failure (default: 0) */
+	retries?: number;
 }
 
 export interface ApiResponse<T> {
