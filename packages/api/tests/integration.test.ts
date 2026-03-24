@@ -259,22 +259,24 @@ describe("Keys API", () => {
 		expect(revoked.length).toBeGreaterThan(0);
 	});
 
-	test("multiple keys can be created", async () => {
-		const results = await Promise.all(
-			["Key-A", "Key-B", "Key-C"].map((name) =>
-				app.request("/api/v1/keys", {
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${apiKey}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ name }),
-				}),
-			),
-		);
-		for (const res of results) {
+	test("multiple keys can be created with unique values", async () => {
+		const keys: string[] = [];
+		for (const name of ["Unique-A", "Unique-B", "Unique-C"]) {
+			const res = await app.request("/api/v1/keys", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${apiKey}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ name }),
+			});
 			expect(res.status).toBe(201);
+			const json = await res.json();
+			keys.push(json.data.key);
 		}
+		// All keys should be unique
+		const uniqueKeys = new Set(keys);
+		expect(uniqueKeys.size).toBe(3);
 	});
 });
 
