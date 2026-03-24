@@ -75,4 +75,43 @@ describe("Admin API", () => {
 		const json = await res.json();
 		expect(json.data.tier).toBe("free");
 	});
+
+	test("POST /admin/bootstrap rejects duplicate email", async () => {
+		const email = `dup-${Date.now()}@example.com`;
+		// First create succeeds
+		await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Secret": "zerostorage-admin-dev",
+			},
+			body: JSON.stringify({ email }),
+		});
+		// Second with same email returns 409
+		const res = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Secret": "zerostorage-admin-dev",
+			},
+			body: JSON.stringify({ email }),
+		});
+		expect(res.status).toBe(409);
+		const json = await res.json();
+		expect(json.error).toContain("already exists");
+	});
+
+	test("POST /admin/bootstrap rejects invalid tier", async () => {
+		const res = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Secret": "zerostorage-admin-dev",
+			},
+			body: JSON.stringify({ email: `tier-${Date.now()}@example.com`, tier: "invalid" }),
+		});
+		expect(res.status).toBe(400);
+		const json = await res.json();
+		expect(json.error).toContain("Invalid tier");
+	});
 });

@@ -23,12 +23,24 @@ adminRouter.post("/bootstrap", async (c) => {
 
 	const userId = nanoid();
 	const tier = body.tier ?? "free";
+	const validTiers = ["free", "starter", "pro", "enterprise"];
 
-	queries.insertUser.run({
-		$id: userId,
-		$email: body.email,
-		$tier: tier,
-	});
+	if (!validTiers.includes(tier)) {
+		return c.json({ success: false, error: `Invalid tier. Must be one of: ${validTiers.join(", ")}` }, 400);
+	}
+
+	try {
+		queries.insertUser.run({
+			$id: userId,
+			$email: body.email,
+			$tier: tier,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.message.includes("UNIQUE")) {
+			return c.json({ success: false, error: "Email already exists" }, 409);
+		}
+		throw error;
+	}
 
 	const rawKey = `zs_${randomBytes(24).toString("base64url")}`;
 	const keyHash = hashApiKey(rawKey);
