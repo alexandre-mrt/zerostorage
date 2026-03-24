@@ -100,4 +100,12 @@ describe("API response envelope consistency", () => {
 			expect(res.headers.get("content-type")).toContain("application/json");
 		}
 	});
+
+	test("usage returns the correct tier for the user", async () => {
+		const res = await app.request("/api/v1/usage", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await res.json();
+		expect(["free", "starter", "pro", "enterprise"]).toContain(json.data.tier);
+	});
 });
