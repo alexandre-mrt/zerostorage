@@ -22,6 +22,14 @@ keysRouter.post("/", async (c) => {
 		return c.json({ success: false, error: "Name is required" }, 400);
 	}
 
+	const trimmedName = body.name.trim();
+	if (trimmedName.length === 0) {
+		return c.json({ success: false, error: "Name cannot be empty" }, 400);
+	}
+	if (trimmedName.length > 100) {
+		return c.json({ success: false, error: "Name must be 100 characters or less" }, 400);
+	}
+
 	const countResult = queries.activeApiKeyCount.get(auth.userId);
 	const maxKeys = auth.tier === "free" ? 2 : auth.tier === "starter" ? 5 : 20;
 
@@ -41,7 +49,7 @@ keysRouter.post("/", async (c) => {
 		$id: keyId,
 		$keyHash: keyHash,
 		$keyPrefix: keyPrefix,
-		$name: body.name,
+		$name: trimmedName,
 		$userId: auth.userId,
 	});
 
@@ -51,7 +59,7 @@ keysRouter.post("/", async (c) => {
 			id: keyId,
 			key: rawKey,
 			keyPrefix,
-			name: body.name,
+			name: trimmedName,
 			message: "Save this key securely. It will not be shown again.",
 		},
 	}, 201);

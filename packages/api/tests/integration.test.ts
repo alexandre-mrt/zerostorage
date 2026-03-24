@@ -141,6 +141,60 @@ describe("Keys API", () => {
 		});
 		expect(res.status).toBe(400);
 	});
+
+	test("POST /keys rejects empty name", async () => {
+		const res = await app.request("/api/v1/keys", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ name: "   " }),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST /keys rejects name over 100 chars", async () => {
+		const res = await app.request("/api/v1/keys", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ name: "x".repeat(101) }),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("DELETE /keys/:id revokes a key", async () => {
+		// Create a key to revoke
+		const createRes = await app.request("/api/v1/keys", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ name: "ToRevoke" }),
+		});
+		const created = await createRes.json();
+		const keyId = created.data.id;
+
+		const res = await app.request(`/api/v1/keys/${keyId}`, {
+			method: "DELETE",
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		expect(res.status).toBe(200);
+		const json = await res.json();
+		expect(json.data.message).toContain("revoked");
+	});
+
+	test("DELETE /keys/:id returns 404 for nonexistent", async () => {
+		const res = await app.request("/api/v1/keys/nonexistent", {
+			method: "DELETE",
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		expect(res.status).toBe(404);
+	});
 });
 
 describe("Usage API", () => {
