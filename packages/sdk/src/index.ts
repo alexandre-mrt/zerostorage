@@ -154,6 +154,12 @@ export class ZeroStore {
 		return this.request<UsageStats>("/usage");
 	}
 
+	// --- File Stats ---
+
+	async fileStats(): Promise<{ totalFiles: number; totalSize: number }> {
+		return this.request<{ totalFiles: number; totalSize: number }>("/files/stats/summary");
+	}
+
 	// --- Health ---
 
 	/**

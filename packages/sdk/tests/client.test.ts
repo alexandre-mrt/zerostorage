@@ -26,6 +26,10 @@ describe("SDK client method signatures", () => {
 		expect(typeof store.createKey).toBe("function");
 	});
 
+	test("fileStats returns promise", () => {
+		expect(typeof store.fileStats).toBe("function");
+	});
+
 	test("revokeKey accepts keyId", () => {
 		expect(typeof store.revokeKey).toBe("function");
 	});
