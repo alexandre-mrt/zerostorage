@@ -21,6 +21,10 @@ adminRouter.post("/bootstrap", async (c) => {
 		return c.json({ success: false, error: "Email is required" }, 400);
 	}
 
+	if (!body.email.includes("@") || body.email.length > 254) {
+		return c.json({ success: false, error: "Invalid email format" }, 400);
+	}
+
 	const userId = nanoid();
 	const tier = body.tier ?? "free";
 	const validTiers = ["free", "starter", "pro", "enterprise"];

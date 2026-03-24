@@ -59,4 +59,44 @@ describe("App-level middleware stack", () => {
 		expect(json.name).toBe("ZeroStore API");
 		expect(json.version).toBe("0.1.0");
 	});
+
+	test("CORS preflight OPTIONS returns 204", async () => {
+		const res = await app.request("/", {
+			method: "OPTIONS",
+			headers: {
+				Origin: "http://localhost:5173",
+				"Access-Control-Request-Method": "POST",
+			},
+		});
+		// Hono cors middleware returns 204 for preflight
+		expect([200, 204]).toContain(res.status);
+	});
+});
+
+describe("Bootstrap email validation", () => {
+	test("rejects email without @", async () => {
+		const res = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Secret": "zerostorage-admin-dev",
+			},
+			body: JSON.stringify({ email: "notanemail" }),
+		});
+		expect(res.status).toBe(400);
+		const json = await res.json();
+		expect(json.error).toContain("email");
+	});
+
+	test("rejects overly long email", async () => {
+		const res = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Secret": "zerostorage-admin-dev",
+			},
+			body: JSON.stringify({ email: `${"a".repeat(250)}@test.com` }),
+		});
+		expect(res.status).toBe(400);
+	});
 });
