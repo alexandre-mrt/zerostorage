@@ -216,6 +216,39 @@ describe("Keys API", () => {
 		});
 		expect(res.status).toBe(404);
 	});
+
+	test("revoked key cannot authenticate", async () => {
+		// Create a key, then revoke it, then try to use it
+		const createRes = await app.request("/api/v1/keys", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ name: "WillDie" }),
+		});
+		const created = await createRes.json();
+		const newKey = created.data.key;
+		const keyId = created.data.id;
+
+		// Verify it works
+		const checkRes = await app.request("/api/v1/files", {
+			headers: { Authorization: `Bearer ${newKey}` },
+		});
+		expect(checkRes.status).toBe(200);
+
+		// Revoke it (using the original key)
+		await app.request(`/api/v1/keys/${keyId}`, {
+			method: "DELETE",
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+
+		// Now the revoked key should fail
+		const failRes = await app.request("/api/v1/files", {
+			headers: { Authorization: `Bearer ${newKey}` },
+		});
+		expect(failRes.status).toBe(401);
+	});
 });
 
 describe("Usage API", () => {
