@@ -1,0 +1,12 @@
+{
+  "name": "zerostorage",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev:api": "bun run --filter @zerostorage/api dev",
+    "dev:dashboard": "bun run --filter @zerostorage/dashboard dev",
+    "build": "bun run --filter '*' build",
+    "lint": "bunx biome check --write .",
+    "typecheck": "bun run --filter '*' typecheck"
+  }
+}
