@@ -41,4 +41,17 @@ describe("Health endpoint", () => {
 		// Timestamp should be a valid ISO string
 		expect(new Date(json.data.timestamp).getTime()).toBeGreaterThan(0);
 	});
+
+	test("health timestamp is recent (within 5 seconds)", async () => {
+		const res = await app.request("/admin/health");
+		const json = await res.json();
+		const ts = new Date(json.data.timestamp).getTime();
+		const now = Date.now();
+		expect(Math.abs(now - ts)).toBeLessThan(5000);
+	});
+
+	test("health returns JSON content-type", async () => {
+		const res = await app.request("/admin/health");
+		expect(res.headers.get("content-type")).toContain("json");
+	});
 });
