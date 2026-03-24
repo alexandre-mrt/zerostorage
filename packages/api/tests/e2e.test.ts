@@ -129,4 +129,26 @@ describe("End-to-end: bootstrap -> keys -> usage", () => {
 		expect(json.data.totalFiles).toBe(0);
 		expect(json.data.totalSize).toBe(0);
 	});
+
+	test("keys list returns correct shape per key", async () => {
+		const email = `shape-${Date.now()}@test.com`;
+		const boot = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-Admin-Secret": "zerostorage-admin-dev" },
+			body: JSON.stringify({ email }),
+		});
+		const key = (await boot.json()).data.apiKey;
+
+		const res = await app.request("/api/v1/keys", {
+			headers: { Authorization: `Bearer ${key}` },
+		});
+		const keys = (await res.json()).data.keys;
+		expect(keys.length).toBeGreaterThanOrEqual(1);
+		const k = keys[0];
+		expect(k).toHaveProperty("id");
+		expect(k).toHaveProperty("keyPrefix");
+		expect(k).toHaveProperty("name");
+		expect(k).toHaveProperty("createdAt");
+		expect(k.keyPrefix).toMatch(/^zs_/);
+	});
 });
