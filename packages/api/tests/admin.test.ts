@@ -114,4 +114,33 @@ describe("Admin API", () => {
 		const json = await res.json();
 		expect(json.error).toContain("Invalid tier");
 	});
+
+	test("POST /admin/bootstrap accepts all valid tiers", async () => {
+		for (const tier of ["free", "starter", "pro", "enterprise"]) {
+			const res = await app.request("/admin/bootstrap", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Admin-Secret": "zerostorage-admin-dev",
+				},
+				body: JSON.stringify({ email: `${tier}-${Date.now()}@test.com`, tier }),
+			});
+			expect(res.status).toBe(201);
+			const json = await res.json();
+			expect(json.data.tier).toBe(tier);
+		}
+	});
+
+	test("POST /admin/bootstrap returns API key with zs_ prefix", async () => {
+		const res = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Secret": "zerostorage-admin-dev",
+			},
+			body: JSON.stringify({ email: `prefix-${Date.now()}@test.com` }),
+		});
+		const json = await res.json();
+		expect(json.data.apiKey).toMatch(/^zs_[A-Za-z0-9_-]{32}$/);
+	});
 });
