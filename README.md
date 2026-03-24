@@ -1,5 +1,8 @@
 # ZeroStore
 
+[![CI](https://github.com/alexandre-mrt/zerostorage/actions/workflows/ci.yml/badge.svg)](https://github.com/alexandre-mrt/zerostorage/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **The fastest way to store files on 0G decentralized storage.**
 
 ZeroStore provides a production-ready REST API, TypeScript SDK, and dashboard for uploading and managing files on [0G Storage](https://0g.ai) - the decentralized storage layer of the 0G AI operating system.

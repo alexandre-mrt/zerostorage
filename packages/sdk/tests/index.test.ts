@@ -63,6 +63,20 @@ describe("ZeroStoreError", () => {
 		expect(error.name).toBe("ZeroStoreError");
 		expect(error).toBeInstanceOf(Error);
 	});
+
+	test("is catchable as Error", () => {
+		try {
+			throw new ZeroStoreError("test", 500);
+		} catch (e) {
+			expect(e).toBeInstanceOf(Error);
+			expect(e).toBeInstanceOf(ZeroStoreError);
+		}
+	});
+
+	test("statusCode 0 for network errors", () => {
+		const error = new ZeroStoreError("Connection refused", 0);
+		expect(error.statusCode).toBe(0);
+	});
 });
 
 describe("ZeroStore API methods exist", () => {
