@@ -7,8 +7,8 @@
   "module": "dist/index.mjs",
   "files": ["dist"],
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node && tsc --emitDeclarationOnly",
-    "typecheck": "tsc --noEmit"
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "typecheck": "bunx tsc --noEmit"
   },
   "keywords": ["0g", "storage", "decentralized", "web3", "sdk"],
   "license": "MIT",
