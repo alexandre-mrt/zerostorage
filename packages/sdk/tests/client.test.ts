@@ -72,3 +72,20 @@ describe("SDK constructor validation", () => {
 		expect(store).toBeInstanceOf(ZeroStore);
 	});
 });
+
+describe("SDK ping method", () => {
+	test("ping exists as a method", () => {
+		const store = new ZeroStore({ apiKey: "zs_test" });
+		expect(typeof store.ping).toBe("function");
+	});
+
+	test("ping returns false for unreachable server", async () => {
+		const store = new ZeroStore({
+			apiKey: "zs_test",
+			baseUrl: "http://localhost:1",
+			timeout: 500,
+		});
+		const result = await store.ping();
+		expect(result).toBe(false);
+	});
+});

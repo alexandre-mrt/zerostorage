@@ -153,6 +153,22 @@ export class ZeroStore {
 	async usage(): Promise<UsageStats> {
 		return this.request<UsageStats>("/usage");
 	}
+
+	// --- Health ---
+
+	/**
+	 * Check if the API is reachable. Returns true if the health endpoint responds.
+	 */
+	async ping(): Promise<boolean> {
+		try {
+			const response = await fetch(`${this.baseUrl}/admin/health`, {
+				signal: AbortSignal.timeout(this.timeout),
+			});
+			return response.ok;
+		} catch {
+			return false;
+		}
+	}
 }
 
 export class ZeroStoreError extends Error {
