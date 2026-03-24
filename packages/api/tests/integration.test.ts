@@ -134,6 +134,15 @@ describe("Files API", () => {
 		});
 		expect(res.status).toBe(404);
 	});
+
+	test("GET /files returns correct page and limit in response", async () => {
+		const res = await app.request("/api/v1/files?page=2&limit=5", {
+			headers: { Authorization: `Bearer ${apiKey}` },
+		});
+		const json = await res.json();
+		expect(json.data.page).toBe(2);
+		expect(json.data.limit).toBe(5);
+	});
 });
 
 describe("Keys API", () => {
