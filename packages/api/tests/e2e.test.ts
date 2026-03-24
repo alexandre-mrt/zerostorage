@@ -111,4 +111,22 @@ describe("End-to-end: bootstrap -> keys -> usage", () => {
 		expect(freeFiles.headers.get("X-RateLimit-Limit")).toBe("100");
 		expect(proFiles.headers.get("X-RateLimit-Limit")).toBe("10000");
 	});
+
+	test("file stats summary reflects empty storage", async () => {
+		const email = `stats-${Date.now()}@test.com`;
+		const bootstrapRes = await app.request("/admin/bootstrap", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-Admin-Secret": "zerostorage-admin-dev" },
+			body: JSON.stringify({ email, tier: "free" }),
+		});
+		const key = (await bootstrapRes.json()).data.apiKey;
+
+		const res = await app.request("/api/v1/files/stats/summary", {
+			headers: { Authorization: `Bearer ${key}` },
+		});
+		expect(res.status).toBe(200);
+		const json = await res.json();
+		expect(json.data.totalFiles).toBe(0);
+		expect(json.data.totalSize).toBe(0);
+	});
 });
